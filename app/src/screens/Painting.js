@@ -34,6 +34,7 @@ import * as FileSystem from "expo-file-system";
 import * as Crypto from "expo-crypto";
 import { checkForHash } from "../apis/hashedUrls";
 import { PinchGestureHandler, PanGestureHandler, RotationGestureHandler, State } from "react-native-gesture-handler";
+import { BlurView } from "expo-blur";
 
 export default function Painting({ navigation, route }) {
   const [colorArr, setColorArr] = useState([]);
@@ -49,6 +50,7 @@ export default function Painting({ navigation, route }) {
   const [warning, setWarning] = useState(false);
   const [thickness, setThickness] = useState(5);
   const [opacityOpt, setOpacityOpt] = useState(1);
+  const [blur, setBlur] = useState(0);
   const saved = useRef(false);
 
   const nColors = 12;
@@ -65,10 +67,11 @@ export default function Painting({ navigation, route }) {
 
   const handleOK = async (signature) => {
     try {
+      const path = FileSystem.cacheDirectory + "sign.png";
       await FileSystem.writeAsStringAsync(
         filesystemURI,
         signature.replace("data:image/png;base64,", ""),
-        { encoding: FileSystem.EncodingType.Base64 }
+        { encoding: FileSystem.EncodingType.Base64 },
       );
       // const drawing = await FileSystem.getInfoAsync(filesystemURI);
       // console.log(drawing);
@@ -132,6 +135,8 @@ export default function Painting({ navigation, route }) {
                  .m-signature-pad--footer {display: none; margin: 0px;}
                  body,html { 
                  opacity: ${opacityOpt};
+                 filter: blur(${blur}px);
+                 -webkit-filter: blur(${blur}px);
                  width: ${imgSize.width}px; height: ${imgSize.height}px;}`;
   /* #endregion */
 
@@ -556,21 +561,21 @@ export default function Painting({ navigation, route }) {
                       onHandlerStateChange={onRotateHandlerStateChange}
                       >
                       <Animated.View style={{ width: imgSize.width, height: imgSize.height, transform: [{perspective: 200}, {rotate: _rotateStr}] }}>
-                        <SignatureScreen
-                          ref={ref}
-                          dataURL={dataURL ? dataURL : undefined}
-                          overlaySrc={route.params.imageUrl} //"https://i.ibb.co/hYYc1tg/1-scaled.png" //{route.params.imageUrl}
-                          overlayWidth={imgSize.width}
-                          overlayHeight={imgSize.height}
-                          webStyle={style}
-                          onOK={handleOK}
-                          minWidth={thickness}
-                          maxWidth={thickness}
-                          onEmpty={handleEmpty}
-                          onGetData={handleData}
-                          penColor={HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`)}
-                          style={{ opacity: 0.8 }}
-                        />
+                          <SignatureScreen
+                            ref={ref}
+                            dataURL={dataURL ? dataURL : undefined}
+                            overlaySrc={route.params.imageUrl} //"https://i.ibb.co/hYYc1tg/1-scaled.png" //{route.params.imageUrl}
+                            overlayWidth={imgSize.width}
+                            overlayHeight={imgSize.height}
+                            webStyle={style}
+                            onOK={handleOK}
+                            minWidth={thickness}
+                            maxWidth={thickness}
+                            onEmpty={handleEmpty}
+                            onGetData={handleData}
+                            penColor={HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`)}
+                            style={{ opacity: opacityOpt }}
+                          />
                       </Animated.View>
                     </RotationGestureHandler>
                   </Animated.View>
@@ -629,6 +634,48 @@ export default function Painting({ navigation, route }) {
             </AwesomeButton>
           </HStack>
           {/* Start slider for opacity here */}
+          <HStack
+            width={wp(90)}
+            alignItems="center"
+            justifyContent="center"
+            >
+            
+            <Slider
+              width={wp(60)}
+              height={buttonSize / 1.5}
+              minValue={0}
+              maxValue={10}
+              initVal={100}
+              onValueChangeEnd={(value) => setOpacityOpt(value/10)}
+              colorArr={[
+                HSLToRGB(`hsl("360", 80%, 90%)`),
+                HSLToRGB(`hsl("360", 80%, 60%`),
+              ]}
+            />
+            
+          </HStack>
+          {/* Start slider too for blur */}
+          <HStack
+            width={wp(90)}
+            alignItems="center"
+            justifyContent="center"
+            >
+            
+            <Slider
+              width={wp(60)}
+              height={buttonSize / 1.5}
+              minValue={0}
+              maxValue={10}
+              initVal={100}
+              onValueChangeEnd={(value) => setBlur(value/10)}
+              colorArr={[
+                HSLToRGB(`hsl("360", 80%, 90%)`),
+                HSLToRGB(`hsl("360", 80%, 60%`),
+              ]}
+            />
+            
+          </HStack>
+
           <FlatList
             horizontal
             data={colorArr}
@@ -689,7 +736,7 @@ export default function Painting({ navigation, route }) {
               backgroundColor={colors.green}
               backgroundDarker={colors.lightGrey}
               raiseLevel={2}
-            >
+              >
               <Text color="#fff" fontSize="xl">
                 Save
               </Text>
