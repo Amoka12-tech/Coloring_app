@@ -412,7 +412,9 @@ export default function Painting({ navigation, route }) {
                 colorScheme="teal"
                 w={wp(25)}
                 onPress={() => {
-                  ref.current.readSignature();
+                  setWarning(false);
+                  setIsPageFocused(false);
+                  setSaveModal(true);
                 }}
               >
                 Save

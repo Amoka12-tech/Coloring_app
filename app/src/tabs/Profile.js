@@ -54,14 +54,29 @@ export default function Profile({ navigation }) {
   const drawingsState = useSelector((state) => state.drawings);
   const profilePicDir = `${FileSystem.documentDirectory}profile/pic`;
   const toast = useToast();
+  const [drawingsDetails, setDrawingsDetails] = useState(null);
 
   useEffect(() => {
     return navigation.addListener("blur", () => setImageHashes([]));
   }, []);
 
   useEffect(() => {
-    return navigation.addListener("focus", () => loadProjects());
+    return navigation.addListener("focus", () => {
+      loadProjects();
+      loadLocaStorage();
+    });
   }, []);
+
+  const loadLocaStorage = async () => {
+    const storeDrawings = await AsyncStorage.getItem('@drawings');
+    const drawingsParse = storeDrawings != null ? JSON.parse(storeDrawings) : null;
+    setDrawingsDetails(drawingsParse);
+    // console.log("focus");
+  };
+
+  const showName = (value, url) => {
+    if(value.id === url) return value.name;
+  };
 
   useEffect(() => {
     (async () => {
@@ -381,6 +396,7 @@ export default function Profile({ navigation }) {
               onPress={() => {
                 RootNavigation.navigate("Painting", { imageUrl: item.url });
               }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
             >
               <ImageBackground
                 style={{
@@ -406,6 +422,11 @@ export default function Profile({ navigation }) {
                   compressed
                 />
               </ImageBackground>
+              <Text>
+              {
+                drawingsDetails !== null ? drawingsDetails?.map((value) => showName(value, item.url)) : ''
+              }
+              </Text>
             </TouchableOpacity>
           )}
         />

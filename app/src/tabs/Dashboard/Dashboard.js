@@ -23,6 +23,7 @@ import { setUrls } from "../../redux/reducers/imageUrls";
 import { setDrawings } from "../../redux/reducers/drawings";
 import * as RootNavigation from "../../../RootNavigation";
 import * as FileSystem from "expo-file-system";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Stack = createStackNavigator();
 
@@ -35,12 +36,24 @@ function Dashboard({ navigation }) {
   const imagesState = useSelector((state) => state.images);
   const drawingsState = useSelector((state) => state.drawings);
 
+  const [drawingsDetails, setDrawingsDetails] = useState(null);
+
+  const loadLocaStorage = async () => {
+    const storeDrawings = await AsyncStorage.getItem('@drawings');
+    const drawingsParse = storeDrawings != null ? JSON.parse(storeDrawings) : null;
+    setDrawingsDetails(drawingsParse);
+    // console.log("focus");
+  };
+
   useEffect(() => {
     return navigation.addListener("blur", () => setImageHashes([]));
   }, []);
 
   useEffect(() => {
-    return navigation.addListener("focus", () => loadProjects());
+    return navigation.addListener("focus", () => {
+      loadProjects();
+      loadLocaStorage();
+    });
   }, []);
 
   const loadProjects = () => {
@@ -75,12 +88,15 @@ function Dashboard({ navigation }) {
       const { exists } = await FileSystem.getInfoAsync(sigsDir);
       if (!exists) await FileSystem.makeDirectoryAsync(sigsDir);
       const files = await FileSystem.readDirectoryAsync(sigsDir);
-      const info = await FileSystem.getInfoAsync(sigsDir);
       // console.log(files);
       setImageHashes(hashes.filter((hashObj) => files.includes(hashObj.hash)));
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const showName = (value, url) => {
+    if(value.id === url) return value.name;
   };
 
   const NewPortraitsAvailability = () => (
@@ -156,6 +172,7 @@ function Dashboard({ navigation }) {
             onPress={() => {
               RootNavigation.navigate("Painting", { imageUrl: item.url, itemHash: item });
             }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
           >
             <ImageBackground
               style={{
@@ -180,6 +197,9 @@ function Dashboard({ navigation }) {
                 compressed
               />
             </ImageBackground>
+            <Text>{
+              drawingsDetails !== null ? drawingsDetails?.map((value) => showName(value, item.url)) : ''
+              }</Text>
           </TouchableOpacity>
         )}
       />
@@ -230,6 +250,7 @@ function Dashboard({ navigation }) {
             onPress={() => {
               RootNavigation.navigate("Painting", { imageUrl: item });
             }}
+            style={{ display: 'flex', flexDirection: 'column', }}
           >
             <CachedImage
               style={{
