@@ -45,6 +45,7 @@ function Dashboard({ navigation }) {
 
   const loadProjects = () => {
     console.log("Loading projects");
+    // console.log(drawingsState);
     let urlsSet = false,
       hashesSet = false;
     if (imagesState.length !== 0) {
@@ -64,6 +65,7 @@ function Dashboard({ navigation }) {
       const hashes = await getHashes(urls);
       await loadCurrentProjects(hashes);
       dispatch(setDrawings(hashes));
+      // console.log(hashes);
     })(urlsSet, hashesSet);
   };
 
@@ -73,6 +75,8 @@ function Dashboard({ navigation }) {
       const { exists } = await FileSystem.getInfoAsync(sigsDir);
       if (!exists) await FileSystem.makeDirectoryAsync(sigsDir);
       const files = await FileSystem.readDirectoryAsync(sigsDir);
+      const info = await FileSystem.getInfoAsync(sigsDir);
+      // console.log(files);
       setImageHashes(hashes.filter((hashObj) => files.includes(hashObj.hash)));
     } catch (error) {
       console.error(error);
@@ -150,7 +154,7 @@ function Dashboard({ navigation }) {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => {
-              RootNavigation.navigate("Painting", { imageUrl: item.url });
+              RootNavigation.navigate("Painting", { imageUrl: item.url, itemHash: item });
             }}
           >
             <ImageBackground

@@ -38,6 +38,7 @@ import { StatusBar } from "expo-status-bar";
 import { getHashes } from "../apis/hashedUrls";
 import { clearDrawings, setDrawings } from "../redux/reducers/drawings";
 import { clearCatalogue } from "../redux/reducers/catalogue";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Profile({ navigation }) {
   const [openTab, setOpenTab] = useState("current");
@@ -131,6 +132,7 @@ export default function Profile({ navigation }) {
                 idempotent: true,
               }
             );
+            await AsyncStorage.clear();
           })
         );
       })

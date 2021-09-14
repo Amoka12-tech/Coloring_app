@@ -9,11 +9,12 @@ import {
   FlatList,
   HStack,
   Icon,
+  Input,
   Modal,
   Text,
   VStack,
 } from "native-base";
-import { Animated, Image, TouchableOpacity, View } from "react-native";
+import { Animated, Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import RNSlider from "@react-native-community/slider";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -33,8 +34,8 @@ import * as RootNavigation from "../../RootNavigation";
 import * as FileSystem from "expo-file-system";
 import * as Crypto from "expo-crypto";
 import { checkForHash } from "../apis/hashedUrls";
-import { PinchGestureHandler, PanGestureHandler, RotationGestureHandler, State } from "react-native-gesture-handler";
-import { BlurView } from "expo-blur";
+import { PinchGestureHandler, PanGestureHandler, RotationGestureHandler, State, TextInput } from "react-native-gesture-handler";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Painting({ navigation, route }) {
   const [colorArr, setColorArr] = useState([]);
@@ -51,6 +52,11 @@ export default function Painting({ navigation, route }) {
   const [thickness, setThickness] = useState(5);
   const [opacityOpt, setOpacityOpt] = useState(1);
   const [blur, setBlur] = useState(0);
+  const [saveModal, setSaveModal] = useState(false);
+  const [drawingName, setDrawingName] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [jsonDrawings, setJsonDrawings] = useState(null);
+  const [isPageFocused, setIsPageFocused] = useState(false);
   const saved = useRef(false);
 
   const nColors = 12;
@@ -61,21 +67,96 @@ export default function Painting({ navigation, route }) {
   /* #region  Signature */
   const ref = useRef();
 
+  const { imageUrl, itemHash } = route.params;
+
+  const [penColorHSL, setPenColorHSL] = useState('');
+
+  const roundOpt = Math.round (opacityOpt * 10) / 10;
+
+  const loadLocaStorage = async () => {
+    const storeDrawings = await AsyncStorage.getItem('@drawings');
+    const drawingsParse = storeDrawings != null ? JSON.parse(storeDrawings) : null;
+    setJsonDrawings(drawingsParse);
+    getImageSettings(drawingsParse);
+    // console.log("focus");
+  };
+
+  // useEffect(() => {
+  //   return navigation.addListener("blur", () => setIsPageFocused(false));
+  // },[]);
+
+  useEffect(() => {
+    return navigation.addListener("focus", () => loadLocaStorage());
+  }, []);
+  
+  const drawingArray = jsonDrawings;
+  // console.log('Image:',imageDetails);
+  const imageObj = {
+    id: imageUrl,
+    name: drawingName,
+  };
+
+  const getImageSettings = (value) => {
+    const singleImageDetails = value?.filter(value => value.id === imageUrl);
+    if(singleImageDetails != undefined && isPageFocused !== true){
+      // console.log('Image:',singleImageDetails);
+      setDrawingName(singleImageDetails[0].name);
+      setIsPageFocused(true);
+    }
+  }
+
+
+  useEffect(() => {
+    return () => {
+      updateEditingSet();
+      // console.log('here')
+    };
+  }, [drawingName]);
+
+  const updateEditingSet = () => {
+    if(editing){
+      // console.log(editing);
+      imageObj.name = drawingName;
+    }else{
+      imageObj.name = drawingName;
+    }
+  };
+
   const handleEmpty = () => {
     console.log("Nothing to save");
   };
 
   const handleOK = async (signature) => {
+    // console.log(signature);
     try {
-      const path = FileSystem.cacheDirectory + "sign.png";
       await FileSystem.writeAsStringAsync(
         filesystemURI,
         signature.replace("data:image/png;base64,", ""),
         { encoding: FileSystem.EncodingType.Base64 },
       );
+      
+      
       // const drawing = await FileSystem.getInfoAsync(filesystemURI);
-      // console.log(drawing);
+      // console.log('Name',drawing);
       saved.current = true;
+
+      if(!!drawingArray){
+        const isImageDetails = drawingArray.some(value => value.id === imageObj.id);
+        // console.log("Details:",isImageDetails);
+        if(isImageDetails){
+          const oldDrawingArray = drawingArray.filter(value => value.id !== imageObj.id);
+          const newDrawingArray = oldDrawingArray.concat(imageObj);
+          const jsonPass = JSON.stringify(newDrawingArray);
+          await AsyncStorage.setItem('@drawings',jsonPass);
+        }else{
+          const newDrawingArray = drawingArray.concat(imageObj);
+          const jsonPass = JSON.stringify(newDrawingArray);
+          await AsyncStorage.setItem('@drawings',jsonPass);
+        };
+      }else{
+        const jsonData = JSON.stringify([imageObj]);
+        await AsyncStorage.setItem('@drawings',jsonData);
+      }
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -89,8 +170,9 @@ export default function Painting({ navigation, route }) {
 
   useEffect(() => {
     ref.current.changePenColor(
-      HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`)
+      penColorHSL
     );
+    // console.log(penColorHSL);
   }, [hue, saturation, lightness]);
 
   useEffect(() => {
@@ -134,10 +216,9 @@ export default function Painting({ navigation, route }) {
                  .m-signature-pad--body {border: none;}
                  .m-signature-pad--footer {display: none; margin: 0px;}
                  body,html { 
-                 opacity: ${opacityOpt};
-                 filter: blur(${blur}px);
-                 -webkit-filter: blur(${blur}px);
                  width: ${imgSize.width}px; height: ${imgSize.height}px;}`;
+
+  const [webStyles, setWebStyles] = useState(style);
   /* #endregion */
 
   useEffect(() => {
@@ -155,9 +236,25 @@ export default function Painting({ navigation, route }) {
     else navigation.goBack();
   };
 
-  const zoomOutState = (event) => {
-    console.log(event);
-  };
+  
+
+  useEffect(() => {
+    const color = HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    var hex = color.replace('#','');
+
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+
+    var r = parseInt(hex.substring(0,2), 16),
+        g = parseInt(hex.substring(2,4), 16),
+        b = parseInt(hex.substring(4,6), 16);
+
+        setPenColorHSL('rgba('+r+', '+g+', '+b+', '+roundOpt+')');
+        ref.current.changePenColor(
+          'rgba('+r+', '+g+', '+b+', '+roundOpt+')'
+        );
+  }, [opacityOpt, hue, saturation, lightness]);
 
   const scale = React.useRef(new Animated.Value(1)).current;
   const translateX = React.useRef(new Animated.Value(0)).current;
@@ -206,7 +303,10 @@ export default function Painting({ navigation, route }) {
         <Box safeAreaTop />
 
         <HStack px={5} justifyContent="space-between" alignItems="center">
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => {
+            setIsPageFocused(false);
+            navigation.goBack();
+          }}>
             <Icon
               as={<MaterialIcons name="arrow-back-ios" />}
               size="sm"
@@ -253,6 +353,12 @@ export default function Painting({ navigation, route }) {
       <StatusBar backgroundColor={warning ? "rgba(0,0,0,0.3)" : undefined} />
 
       <AppBar />
+
+      <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', }}>
+        <Text style={{ fontSize: 16 }} >
+          {drawingName}
+        </Text>
+      </View>
 
       <Modal
         isOpen={warning}
@@ -327,7 +433,7 @@ export default function Painting({ navigation, route }) {
             borderRadius: 15,
             backgroundColor: "#4d4d4d",
             width: wp(90),
-            height: hp(60),
+            height: hp(62),
             alignItems: "center",
             shadowColor: "#000",
             shadowOffset: {
@@ -398,9 +504,9 @@ export default function Painting({ navigation, route }) {
             justifyContent="space-between"
             alignItems="center"
             w={wp(80)}
-          >
-            <Text fontSize="xl" color="#fff" ml={2}>
-              Brush size
+            >
+            <Text fontSize="sm" color="#fff" ml={2}>
+              Size
             </Text>
             <Box w={wp(50)}>
               <RNSlider
@@ -415,6 +521,52 @@ export default function Painting({ navigation, route }) {
                 thumbTintColor="#FFF"
               />
             </Box>
+
+            
+            <View
+              style={{
+                width: maxBrushSize,
+                height: maxBrushSize,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: thickness + 8,
+                  height: thickness + 8,
+                  borderRadius: (thickness + 8) / 2,
+                  borderColor: "#fff",
+                  borderWidth: 1,
+                }}
+              />
+            </View>
+          </Box>
+          <Box
+            flex={1}
+            flexDirection="row"
+            justifyContent="space-between"
+            alignItems="center"
+            w={wp(80)}
+            >
+            <Text fontSize="sm" color="#fff" ml={2}>
+              Opacity
+            </Text>
+            <Box w={wp(50)}>
+              <RNSlider
+                minimumValue={0}
+                maximumValue={100}
+                minimumTrackTintColor="#FFF"
+                maximumTrackTintColor="#000"
+                value={opacityOpt*100}
+                step={0.1}
+                tapToSeek
+                onSlidingComplete={(value) => setOpacityOpt(value/100)}
+                thumbTintColor="#FFF"
+              />
+            </Box>
+
+            
             <View
               style={{
                 width: maxBrushSize,
@@ -532,6 +684,53 @@ export default function Painting({ navigation, route }) {
         </View>
       </Modal>
 
+      <Modal 
+       isOpen={saveModal}
+       overlayVisible={true}
+       onClose={() => setWarning(false)}
+       style={{ justifyContent: "center" }}
+       >
+         <View style={{ width: wp(90), flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View />
+            <TouchableOpacity
+              style={{ marginVertical: hp(2) }}
+              onPress={() => setSaveModal(false)}
+              >
+              <Icon color="white" as={<FontAwesome5 name="times" />} size="sm" />
+            </TouchableOpacity>
+         </View>
+         <TextInput 
+          style={{ width: wp(60), marginBottom: 10, backgroundColor: '#fff', borderRadius: 5, padding: 10 }}
+          value={drawingName}
+          onChangeText={(value) => setDrawingName(value)}
+          placeholder="Enter Drawing Name"
+           />
+
+          <HStack
+            width={wp(90)}
+            style={{ height: 40 }}
+            alignItems="center"
+            justifyContent="space-evenly"
+            >
+            <AwesomeButton
+              onPress={() => {
+                console.log("Saving...");
+                ref.current.readSignature();
+              }}
+              height={40}
+              width={wp(30)}
+              borderRadius={2000}
+              backgroundColor={colors.green}
+              backgroundDarker={colors.lightGrey}
+              raiseLevel={2}
+              >
+              <Text color="#fff" fontSize="xl">
+                Save
+              </Text>
+            </AwesomeButton>
+          </HStack>
+       </Modal>
+
       <Box flex={1} alignItems="center">
         <AwesomeButton
               onPress={() => {
@@ -567,14 +766,14 @@ export default function Painting({ navigation, route }) {
                             overlaySrc={route.params.imageUrl} //"https://i.ibb.co/hYYc1tg/1-scaled.png" //{route.params.imageUrl}
                             overlayWidth={imgSize.width}
                             overlayHeight={imgSize.height}
-                            webStyle={style}
+                            webStyle={webStyles}
+                            onBegin={() => setEditing(true)}
                             onOK={handleOK}
                             minWidth={thickness}
                             maxWidth={thickness}
                             onEmpty={handleEmpty}
                             onGetData={handleData}
-                            penColor={HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`)}
-                            style={{ opacity: opacityOpt }}
+                            penColor={penColorHSL}
                           />
                       </Animated.View>
                     </RotationGestureHandler>
@@ -633,48 +832,6 @@ export default function Painting({ navigation, route }) {
               <Icon as={<Entypo name="brush" />} size="sm" color="white" />
             </AwesomeButton>
           </HStack>
-          {/* Start slider for opacity here */}
-          <HStack
-            width={wp(90)}
-            alignItems="center"
-            justifyContent="center"
-            >
-            
-            <Slider
-              width={wp(60)}
-              height={buttonSize / 1.5}
-              minValue={0}
-              maxValue={10}
-              initVal={100}
-              onValueChangeEnd={(value) => setOpacityOpt(value/10)}
-              colorArr={[
-                HSLToRGB(`hsl("360", 80%, 90%)`),
-                HSLToRGB(`hsl("360", 80%, 60%`),
-              ]}
-            />
-            
-          </HStack>
-          {/* Start slider too for blur */}
-          <HStack
-            width={wp(90)}
-            alignItems="center"
-            justifyContent="center"
-            >
-            
-            <Slider
-              width={wp(60)}
-              height={buttonSize / 1.5}
-              minValue={0}
-              maxValue={10}
-              initVal={100}
-              onValueChangeEnd={(value) => setBlur(value/10)}
-              colorArr={[
-                HSLToRGB(`hsl("360", 80%, 90%)`),
-                HSLToRGB(`hsl("360", 80%, 60%`),
-              ]}
-            />
-            
-          </HStack>
 
           <FlatList
             horizontal
@@ -727,8 +884,7 @@ export default function Painting({ navigation, route }) {
             </AwesomeButton>
             <AwesomeButton
               onPress={() => {
-                console.log("Saving...");
-                ref.current.readSignature();
+                setSaveModal(true);
               }}
               height={40}
               width={wp(30)}
@@ -747,3 +903,9 @@ export default function Painting({ navigation, route }) {
     </>
   );
 }
+
+const stylePaint = StyleSheet.create({
+  previewText: {
+    opacity: 0.8
+  }
+});
