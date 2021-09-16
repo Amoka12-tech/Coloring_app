@@ -283,8 +283,6 @@ export default function Painting({ navigation, route }) {
       lastScale *= event.nativeEvent.scale;
       baseScale.setValue(lastScale);
       pinchScale.setValue(1);
-      ref.current.draw();
-
     }
   };
 
@@ -301,6 +299,14 @@ export default function Painting({ navigation, route }) {
     );
 
   const onHandlePanState = (event) => {
+    const { numberOfPointers } = event.nativeEvent;
+    // console.log("Event: ",numberOfPointers);
+    if(numberOfPointers > 1){
+      ref.current.erase();
+    }else{
+      if(isDrawing) ref.current.draw();
+      else ref.current.erase();
+    }
     if(event.nativeEvent.oldState === State.ACTIVE){
       lastPan.x += event.nativeEvent.translationX;
       lastPan.y += event.nativeEvent.translationY;
@@ -308,6 +314,7 @@ export default function Painting({ navigation, route }) {
       translateX.setValue(0);
       translateY.setOffset(lastPan.y)
       translateY.setValue(0);
+      ref.current.erase();
     }
   };
 
@@ -403,50 +410,47 @@ export default function Painting({ navigation, route }) {
         <View
           style={{
             width: wp(70),
-            height: hp(30),
+            height: hp(40),
             backgroundColor: colors.lightGrey,
             borderRadius: 15,
           }}
-        >
-          <Box
-            w={wp(70)}
-            h={hp(10)}
-            bg="#f43f5e"
-            borderTopLeftRadius={15}
-            borderTopRightRadius={15}
-            justifyContent="center"
-            alignItems="center"
           >
-            <AntDesign name="warning" size={hp(7)} color={colors.lightGrey} />
-          </Box>
-          <VStack justifyContent="space-between" flex={1}>
-            <Text fontSize={hp(4)} alignSelf="center" fontWeight={600}>
-              Warning!
-            </Text>
-            <Text alignSelf="center" w={wp(50)} textAlign="center">
-              You have unsaved changes, would you like to save them first?
-            </Text>
-            <Box
-              flexDirection="row"
-              justifyContent="space-evenly"
-              pb={3}
-              alignItems="flex-end"
-            >
-              <Button
-                colorScheme="danger"
-                _text={{
-                  color: "white",
-                }}
-                w={wp(25)}
-                onPress={() => navigation.goBack()}
-              >
-                Discard
-              </Button>
-              <TouchableOpacity  style={{ width: 25 }} onPress={() => console.log('here')} >
-                <Text>Save</Text>
-              </TouchableOpacity>
-            </Box>
-          </VStack>
+
+            <View style={{ 
+              width: wp(70), 
+              height: hp(10), 
+              backgroundColor: '#f43f5e', 
+              borderTopLeftRadius: 15,
+              borderTopRightRadius: 15,
+              justifyContent: 'center',
+              alignItems: 'center',
+               }}>
+              <AntDesign name="warning" size={hp(7)} color={colors.lightGrey} />
+            </View>
+            <View style={{ flex: 1, justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text>Warning</Text>
+              <Text style={{ padding: 10 }}>
+                You have unsaved changes, would you like to save them first?
+              </Text>
+
+              <View style={{ display: 'flex', justifyContent: 'space-between', width: '100%', flexDirection: 'row' }}>
+                <TouchableOpacity 
+                  onPress={() => navigation.goBack()}
+                  style={{ backgroundColor: '#f43f5e', padding: 10 }}>
+                  <Text style={{ color: "#fff" }}>Discard</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    setWarning(false);
+                    setSaveModal(true);
+                  }}
+                  style={{ backgroundColor: colors.green, padding: 10 }}>
+                  <Text style={{ color: "#fff" }}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          
         </View>
       </Modal>
 
