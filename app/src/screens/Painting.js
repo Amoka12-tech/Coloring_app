@@ -163,10 +163,12 @@ export default function Painting({ navigation, route }) {
     }
   };
 
+  const gestureState = State.ACTIVE;
+
   useEffect(() => {
-    if (isDrawing && !isZooming) ref.current.draw();
+    if (isDrawing) ref.current.draw();
     else ref.current.erase();
-  }, [isDrawing, isZooming]);
+  }, [isDrawing]);
 
   useEffect(() => {
     ref.current.changePenColor(
@@ -215,7 +217,7 @@ export default function Painting({ navigation, route }) {
   const style = `.m-signature-pad {box-shadow: none; border: none; } 
                  .m-signature-pad--body {border: none;}
                  .m-signature-pad--footer {display: none; margin: 0px;}
-                 body,html { 
+                 body,html {
                  width: ${imgSize.width}px; height: ${imgSize.height}px;}`;
 
   const [webStyles, setWebStyles] = useState(style);
@@ -256,14 +258,35 @@ export default function Painting({ navigation, route }) {
         );
   }, [opacityOpt, hue, saturation, lightness]);
 
-  const scale = React.useRef(new Animated.Value(1)).current;
-  const translateX = React.useRef(new Animated.Value(0)).current;
-  const translateY = React.useRef(new Animated.Value(0)).current;
+  const [moveZoom, setMoveZoom] = useState(false);
+
+  const panRef = React.createRef();
+  const pinchRef = React.createRef();
+  const rotationRef = React.createRef();
+
+  const baseScale = new Animated.Value(1);
+  const pinchScale = new Animated.Value(1);
+  const scale = new Animated.multiply(baseScale, pinchScale);
+  let lastScale = 1;
+  let lastPan = {x: 0, y: 0};
+  
+  const translateX = new Animated.Value(0);
+  const translateY = new Animated.Value(0);
   const onGestureEvent = Animated.event([{
-    nativeEvent: {scale}
+    nativeEvent: {scale: pinchScale}
   }],
   {useNativeDriver:true}
   );
+
+  const onPinchStateChange = event => {
+    if(event.nativeEvent.oldState === State.ACTIVE){
+      lastScale *= event.nativeEvent.scale;
+      baseScale.setValue(lastScale);
+      pinchScale.setValue(1);
+      ref.current.draw();
+
+    }
+  };
 
   const handlePan = Animated.event([{
     nativeEvent: {
@@ -276,6 +299,17 @@ export default function Painting({ navigation, route }) {
       useNativeDriver: true
     }
     );
+
+  const onHandlePanState = (event) => {
+    if(event.nativeEvent.oldState === State.ACTIVE){
+      lastPan.x += event.nativeEvent.translationX;
+      lastPan.y += event.nativeEvent.translationY;
+      translateX.setOffset(lastPan.x);
+      translateX.setValue(0);
+      translateY.setOffset(lastPan.y)
+      translateY.setValue(0);
+    }
+  };
 
     const _rotate = new Animated.Value(0);
     const _rotateStr = _rotate.interpolate({
@@ -408,17 +442,9 @@ export default function Painting({ navigation, route }) {
               >
                 Discard
               </Button>
-              <Button
-                colorScheme="teal"
-                w={wp(25)}
-                onPress={() => {
-                  setWarning(false);
-                  setIsPageFocused(false);
-                  setSaveModal(true);
-                }}
-              >
-                Save
-              </Button>
+              <TouchableOpacity  style={{ width: 25 }} onPress={() => console.log('here')} >
+                <Text>Save</Text>
+              </TouchableOpacity>
             </Box>
           </VStack>
         </View>
@@ -689,7 +715,6 @@ export default function Painting({ navigation, route }) {
       <Modal 
        isOpen={saveModal}
        overlayVisible={true}
-       onClose={() => setWarning(false)}
        style={{ justifyContent: "center" }}
        >
          <View style={{ width: wp(90), flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -734,7 +759,7 @@ export default function Painting({ navigation, route }) {
        </Modal>
 
       <Box flex={1} alignItems="center">
-        <AwesomeButton
+        {/* <AwesomeButton
               onPress={() => {
                 setIsZooming(!isZooming);
               }}
@@ -747,17 +772,28 @@ export default function Painting({ navigation, route }) {
               style={{ position: 'absolute', left: 20, top: hp(20) }}
             >
             <Image width={20} height={20} resizeMode={'center'} source={require('../../../assets/zoom-in.png')} />
-        </AwesomeButton>
+        </AwesomeButton> */}
         <Box h={imgSize.height} w={imgSize.width}>
           {/* Gesture work start here by Abdulmutalib */}
-            <PanGestureHandler enabled={isZooming} onGestureEvent={handlePan} >
-              <Animated.View style={{ width: imgSize.width, height: imgSize.height }}>
+            <PanGestureHandler 
+              ref={panRef}
+              simultaneousHandlers={[rotationRef, pinchRef]}
+              minPointers={2} 
+              onGestureEvent={handlePan} 
+              onHandlerStateChange={onHandlePanState} >
+              <Animated.View style={{ width: imgSize.width, height: imgSize.height, transform:[{translateY}, {translateX}] }}>
                 <PinchGestureHandler 
-                  enabled={isZooming}
+                  ref={pinchRef}
+                  simultaneousHandlers={rotationRef}
+                  minPointers={2}
                   onGestureEvent={onGestureEvent}
+                  onHandlerStateChange={onPinchStateChange}
                   >
-                  <Animated.View style={{ width: imgSize.width, height: imgSize.height, transform:[{scale}, {translateY}, {translateX}] }}>
+                  <Animated.View style={{ width: imgSize.width, height: imgSize.height, transform:[{scale}] }}>
                     <RotationGestureHandler 
+                      ref={rotationRef}
+                      simultaneousHandlers={pinchRef}
+                      minPointers={2}
                       onGestureEvent={onRotateGestureEvent}
                       onHandlerStateChange={onRotateHandlerStateChange}
                       >
