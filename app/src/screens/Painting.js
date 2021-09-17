@@ -217,6 +217,10 @@ export default function Painting({ navigation, route }) {
   const style = `.m-signature-pad {box-shadow: none; border: none; } 
                  .m-signature-pad--body {border: none;}
                  .m-signature-pad--footer {display: none; margin: 0px;}
+                 .button {
+                   background-color: red;
+                   color: #FFF;
+                 }
                  body,html {
                  width: ${imgSize.width}px; height: ${imgSize.height}px;}`;
 
@@ -811,6 +815,7 @@ export default function Painting({ navigation, route }) {
                             webStyle={webStyles}
                             onBegin={() => setEditing(true)}
                             onOK={handleOK}
+                            trimWhitespace={false}
                             minWidth={thickness}
                             maxWidth={thickness}
                             onEmpty={handleEmpty}
