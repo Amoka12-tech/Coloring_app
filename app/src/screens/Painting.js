@@ -901,6 +901,54 @@ export default function Painting({ navigation, route }) {
             </AwesomeButton>
           </HStack>
 
+          {/* Opacity settings */}
+          <HStack
+            width={wp(90)}
+            alignItems="center"
+            justifyContent="space-between"
+            >
+            
+            <Text>Opacity</Text>
+            
+            <Slider
+              width={wp(60)}
+              height={buttonSize / 1.5}
+              minValue={0}
+              maxValue={100}
+              initVal={opacityOpt*100}
+              positionVal={opacityOpt*100}
+              onValueChangeEnd={(value) => setOpacityOpt(value/100)}
+              colorArr={[
+                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
+                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
+              ]}
+            />
+          </HStack>
+
+          {/* Opacity own */}
+
+          <HStack
+            width={wp(90)}
+            alignItems="center"
+            justifyContent="space-between"
+            >
+              <Text>Brush Size</Text>
+            <Slider
+              width={wp(60)}
+              height={buttonSize / 1.5}
+              minValue={minBrushSize}
+              maxValue={maxBrushSize}
+              initVal={thickness}
+              positionVal={Math.round((thickness / 27) * 100) }
+              onValueChangeEnd={(value) => setThickness(value)}
+              colorArr={[
+                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
+                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
+              ]}
+            />
+            <View />
+          </HStack>
+
           <FlatList
             horizontal
             data={colorArr}
