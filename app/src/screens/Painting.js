@@ -37,6 +37,11 @@ import { checkForHash } from "../apis/hashedUrls";
 import { PinchGestureHandler, PanGestureHandler, RotationGestureHandler, State, TextInput } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import ExpoPixi from 'expo-pixi';
+import Expo from 'expo';
+import SignaturePad from 'react-native-signature-pad';
+import { GLView } from "expo-gl";
+
 export default function Painting({ navigation, route }) {
   const [colorArr, setColorArr] = useState([]);
   const [hue, setHue] = useState("360");
@@ -66,6 +71,7 @@ export default function Painting({ navigation, route }) {
 
   /* #region  Signature */
   const ref = useRef();
+  const expoRef = useRef();
 
   const { imageUrl, itemHash } = route.params;
 
@@ -174,7 +180,7 @@ export default function Painting({ navigation, route }) {
     ref.current.changePenColor(
       penColorHSL
     );
-    // console.log(penColorHSL);
+    console.log(penColorHSL);
   }, [hue, saturation, lightness]);
 
   useEffect(() => {
@@ -318,7 +324,7 @@ export default function Painting({ navigation, route }) {
       translateX.setValue(0);
       translateY.setOffset(lastPan.y)
       translateY.setValue(0);
-      ref.current.erase();
+      // ref.current.erase();
     }
   };
 
@@ -544,6 +550,10 @@ export default function Painting({ navigation, route }) {
             <Text fontSize="sm" color="#fff" ml={2}>
               Size
             </Text>
+
+            <Text style={{ marginLeft: 10 }} fontSize="sm" color="#fff" >
+              0%
+            </Text>
             <Box w={wp(50)}>
               <RNSlider
                 minimumValue={minBrushSize}
@@ -557,7 +567,10 @@ export default function Painting({ navigation, route }) {
                 thumbTintColor="#FFF"
               />
             </Box>
-
+            
+            <Text fontSize="sm" color="#fff" >
+              100%
+            </Text>
             
             <View
               style={{
@@ -567,7 +580,7 @@ export default function Painting({ navigation, route }) {
                 alignItems: "center",
               }}
             >
-              <View
+              {/* <View
                 style={{
                   width: thickness + 8,
                   height: thickness + 8,
@@ -575,7 +588,7 @@ export default function Painting({ navigation, route }) {
                   borderColor: "#fff",
                   borderWidth: 1,
                 }}
-              />
+              /> */}
             </View>
           </Box>
           <Box
@@ -588,7 +601,10 @@ export default function Painting({ navigation, route }) {
             <Text fontSize="sm" color="#fff" ml={2}>
               Opacity
             </Text>
-            <Box w={wp(50)}>
+            <Text style={{ marginLeft: 10 }} fontSize="sm" color="#fff" >
+              0%
+            </Text>
+            <Box w={wp(40)}>
               <RNSlider
                 minimumValue={0}
                 maximumValue={100}
@@ -602,6 +618,10 @@ export default function Painting({ navigation, route }) {
               />
             </Box>
 
+            <Text fontSize="sm" color="#fff">
+              100%
+            </Text>
+
             
             <View
               style={{
@@ -611,7 +631,7 @@ export default function Painting({ navigation, route }) {
                 alignItems: "center",
               }}
             >
-              <View
+              {/* <View
                 style={{
                   width: thickness + 8,
                   height: thickness + 8,
@@ -619,7 +639,7 @@ export default function Painting({ navigation, route }) {
                   borderColor: "#fff",
                   borderWidth: 1,
                 }}
-              />
+              /> */}
             </View>
           </Box>
         </View>
@@ -859,6 +879,7 @@ export default function Painting({ navigation, route }) {
               minValue={60}
               maxValue={90}
               initVal={75}
+              positionVal={Math.round(((90 - lightness) / 30) * 100) }
               onValueChangeEnd={(value) => setLightness(90 - value + 60)}
               colorArr={[
                 HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),

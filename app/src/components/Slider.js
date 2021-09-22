@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, PanResponder, Animated } from 'react-native';
+import { View, PanResponder, Animated, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Slider(props) {
@@ -8,6 +8,7 @@ export default function Slider(props) {
   const minBoundary = 0;
   const maxBoundary = 100;
   const initVal = props.initVal || props.maxValue / 2 || 50;
+  const currentValue = props.positionVal;
 
   const pan = useRef(new Animated.ValueXY()).current;
   const [forceRender, setForceRender] = useState(0);
@@ -130,9 +131,11 @@ export default function Slider(props) {
         style={{
           position: 'absolute',
           overflow: 'visible',
+          justifyContent: 'center',
+          alignItems: 'center',
           left: sliderCenter + initOffset,
-          height: props.thumbSize || props.height * 0.8 || 32,
-          width: props.thumbSize || props.height * 0.8 || 32,
+          height: props.thumbSize || props.height * 0.9 || 40,
+          width: props.thumbSize || props.height * 0.9 || 40,
           backgroundColor: props.thumbBackgroundColor || 'transparent',
           borderRadius: props.thumbBorderRadius || 9999,
           borderWidth: props.thumbBorderWidth || 2,
@@ -154,7 +157,11 @@ export default function Slider(props) {
           ],
         }}
         {...panResponder.panHandlers}
-      />
+      >
+        <Text style={{ fontSize: 6, color: '#fff' }}>
+          {currentValue}%
+        </Text>
+      </Animated.View>
     </View>
   );
 }
