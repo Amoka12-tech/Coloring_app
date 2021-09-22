@@ -540,7 +540,7 @@ export default function Painting({ navigation, route }) {
               )}
             />
           </View>
-          <Box
+          {/* <Box
             flex={1}
             flexDirection="row"
             justifyContent="space-between"
@@ -580,7 +580,7 @@ export default function Painting({ navigation, route }) {
                 alignItems: "center",
               }}
             >
-              {/* <View
+              <View
                 style={{
                   width: thickness + 8,
                   height: thickness + 8,
@@ -588,10 +588,10 @@ export default function Painting({ navigation, route }) {
                   borderColor: "#fff",
                   borderWidth: 1,
                 }}
-              /> */}
+              />
             </View>
-          </Box>
-          <Box
+          </Box> */}
+          {/* <Box
             flex={1}
             flexDirection="row"
             justifyContent="space-between"
@@ -631,7 +631,7 @@ export default function Painting({ navigation, route }) {
                 alignItems: "center",
               }}
             >
-              {/* <View
+              <View
                 style={{
                   width: thickness + 8,
                   height: thickness + 8,
@@ -639,9 +639,9 @@ export default function Painting({ navigation, route }) {
                   borderColor: "#fff",
                   borderWidth: 1,
                 }}
-              /> */}
+              />
             </View>
-          </Box>
+          </Box> */}
         </View>
         <Svg
           style={{ alignSelf: "flex-end", end: wp(11) - 14.5, top: -10 }}
