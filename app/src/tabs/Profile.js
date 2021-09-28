@@ -54,7 +54,7 @@ export default function Profile({ navigation }) {
   const drawingsState = useSelector((state) => state.drawings);
   const profilePicDir = `${FileSystem.documentDirectory}profile/pic`;
   const toast = useToast();
-  const [drawingsDetails, setDrawingsDetails] = useState(null);
+  const [drawingsDetails, setDrawingsDetails] = useState([]);
 
   useEffect(() => {
     return navigation.addListener("blur", () => setImageHashes([]));
@@ -135,36 +135,40 @@ export default function Profile({ navigation }) {
     setImageHashes(hashes.filter((hashObj) => files.includes(hashObj.hash)));
   };
 
-  const clearCache = () => {
+  const clearCache = async () => {
     setIsSpinning(true);
-    FileSystem.readDirectoryAsync(FileSystem.documentDirectory)
-      .then(async (arr) => {
-        return Promise.all(
-          arr.map(async (path) => {
-            await FileSystem.deleteAsync(
-              `${FileSystem.documentDirectory}${path}`,
-              {
-                idempotent: true,
-              }
-            );
-            await AsyncStorage.clear();
-          })
-        );
-      })
-      .then(() => {
-        dispatch(clearCatalogue());
-        dispatch(clearDrawings());
-        dispatch(clearUrls());
-      })
-      .then(() => {
-        setIsSpinning(false);
-        toast.show({
-          title: "Please reload the app",
-          placement: "bottom",
-          status: "info",
-        });
-      })
-      .catch(console.error);
+    await AsyncStorage.clear();
+    setDrawingsDetails([]);
+    setIsSpinning(false);
+    // setIsSpinning(true);
+    // FileSystem.readDirectoryAsync(FileSystem.documentDirectory)
+    //   .then(async (arr) => {
+    //     return Promise.all(
+    //       arr.map(async (path) => {
+    //         await FileSystem.deleteAsync(
+    //           `${FileSystem.documentDirectory}${path}`,
+    //           {
+    //             idempotent: true,
+    //           }
+    //         );
+            
+    //       })
+    //     );
+    //   })
+    //   .then(() => {
+    //     dispatch(clearCatalogue());
+    //     dispatch(clearDrawings());
+    //     dispatch(clearUrls());
+    //   })
+    //   .then(() => {
+    //     setIsSpinning(false);
+    //     toast.show({
+    //       title: "Please reload the app",
+    //       placement: "bottom",
+    //       status: "info",
+    //     });
+    //   })
+    //   .catch(console.error);
   };
 
   const AppBar = () => (
@@ -387,14 +391,14 @@ export default function Profile({ navigation }) {
         <ProfileImage />
         <ListTabs />
         <FlatList
-          data={imageHashes}
+          data={drawingsDetails}
           numColumns={2}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item, index) => `${index}-${item}`}
+          keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => {
-                RootNavigation.navigate("Painting", { imageUrl: item.url });
+                RootNavigation.navigate("Painting", { imageUrl: item.imageUrl, itemHash: item });
               }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
             >
@@ -406,9 +410,7 @@ export default function Profile({ navigation }) {
                   marginVertical: 7,
                 }}
                 source={{
-                  uri: `${FileSystem.documentDirectory}sigs/${
-                    item.hash
-                  }?_=${Date.now()}`,
+                  uri: item.imageUrl,
                 }}
               >
                 <CachedImage
@@ -418,13 +420,13 @@ export default function Profile({ navigation }) {
                     borderWidth: 2,
                     borderColor: "black",
                   }}
-                  source={{ uri: item.url }}
+                  source={{ uri: item.dataURL }}
                   compressed
                 />
               </ImageBackground>
               <Text>
               {
-                drawingsDetails !== null ? drawingsDetails?.map((value) => showName(value, item.url)) : ''
+                item.name
               }
               </Text>
             </TouchableOpacity>

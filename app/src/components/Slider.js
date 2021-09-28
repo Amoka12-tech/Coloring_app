@@ -8,7 +8,7 @@ export default function Slider(props) {
   const minBoundary = 0;
   const maxBoundary = 100;
   const initVal = props.initVal || props.maxValue / 2 || 50;
-  const currentValue = props.positionVal;
+  const currentValue = Math.round(props.positionVal);
 
   const pan = useRef(new Animated.ValueXY()).current;
   const [forceRender, setForceRender] = useState(0);

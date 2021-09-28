@@ -36,17 +36,18 @@ import * as Crypto from "expo-crypto";
 import { checkForHash } from "../apis/hashedUrls";
 import { PinchGestureHandler, PanGestureHandler, RotationGestureHandler, State, TextInput } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import ExpoPixi from 'expo-pixi';
-import Expo from 'expo';
-import SignaturePad from 'react-native-signature-pad';
-import { GLView } from "expo-gl";
+import { v4 as uuidv4 } from 'uuid';
+import { useDispatch, useSelector } from "react-redux";
+import SignaturePage from "./SignaturePage";
 
 export default function Painting({ navigation, route }) {
+  // const brushSettings = useSelector(state => state.imageSettings);
+  // console.log(brushSettings?.opacity);
+  
   const [colorArr, setColorArr] = useState([]);
-  const [hue, setHue] = useState("360");
-  const [saturation, setSaturation] = useState(80);
-  const [lightness, setLightness] = useState(75);
+  // const hue = brushSettings?.hue;
+  // const saturation = brushSettings?.saturation;
+  // const lightness = brushSettings?.lightness;
   const [isDrawing, setIsDrawing] = useState(true);
   const [isZooming, setIsZooming] = useState(false);
   const [drawingModal, setDrawingModal] = useState(false);
@@ -54,11 +55,13 @@ export default function Painting({ navigation, route }) {
   const [dataURL, setDataURL] = useState(null);
   const [filesystemURI, setFilesystemURI] = useState(null);
   const [warning, setWarning] = useState(false);
-  const [thickness, setThickness] = useState(5);
-  const [opacityOpt, setOpacityOpt] = useState(1);
+  // const thickness = brushSettings?.thickness;
+  // const [opacityOpt, setOpacityOpt] = useState(brushSettings?.opacity);
   const [blur, setBlur] = useState(0);
   const [saveModal, setSaveModal] = useState(false);
   const [drawingName, setDrawingName] = useState('');
+  const [imageBase64, setImageBase64] = useState(null);
+  const [imageId, setImageId] = useState(null);
   const [editing, setEditing] = useState(false);
   const [jsonDrawings, setJsonDrawings] = useState(null);
   const [isPageFocused, setIsPageFocused] = useState(false);
@@ -72,20 +75,69 @@ export default function Painting({ navigation, route }) {
   /* #region  Signature */
   const ref = useRef();
   const expoRef = useRef();
+  const dispatch = useDispatch();
 
-  const { imageUrl, itemHash } = route.params;
+  const changeOpacity = (value) => {
+    const opacityVal = Math.round (value * 10) /10;
+    dispatch({type: "SET_OPACITY", payload: opacityVal});
+  };
+
+  const { imageUrl, itemHash} = route.params;
 
   const [penColorHSL, setPenColorHSL] = useState('');
 
-  const roundOpt = Math.round (opacityOpt * 10) / 10;
+  // const roundOpt = Math.round (brushSettings.opacity * 10) / 10;
 
   const loadLocaStorage = async () => {
     const storeDrawings = await AsyncStorage.getItem('@drawings');
     const drawingsParse = storeDrawings != null ? JSON.parse(storeDrawings) : null;
     setJsonDrawings(drawingsParse);
     getImageSettings(drawingsParse);
-    // console.log("focus");
+    console.log("focus");
   };
+
+  const OpacityBtn = (props) => {
+    return(
+      <TouchableOpacity 
+        onPress={() => props.setState(props.value/100)}
+        style={{ 
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          flexDirection: 'column',
+          justifyContent: 'center',
+          backgroundColor: "#fff",
+          alignItems: 'center',
+          marginLeft: 10,
+          elevation: 2,
+         }}
+        >
+        <Text fontSize={10} >{`${props.value}%`}</Text>
+      </TouchableOpacity>
+    )
+  };
+
+  const SizeBtn = (props) => {
+    return(
+      <TouchableOpacity 
+        onPress={() => props.setState((props.value * 27)/100)}
+        style={{ 
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          flexDirection: 'column',
+          justifyContent: 'center',
+          backgroundColor: "#fff",
+          alignItems: 'center',
+          marginLeft: 10,
+          elevation: 2,
+         }}
+        >
+        <Text fontSize={10} >{`${props.value}%`}</Text>
+      </TouchableOpacity>
+    )
+  };
+  
 
   // useEffect(() => {
   //   return navigation.addListener("blur", () => setIsPageFocused(false));
@@ -94,21 +146,29 @@ export default function Painting({ navigation, route }) {
   useEffect(() => {
     return navigation.addListener("focus", () => loadLocaStorage());
   }, []);
+  const thisItemId = Date.now();
   
   const drawingArray = jsonDrawings;
-  // console.log('Image:',imageDetails);
+  // console.log('Code:',thisItemId);
   const imageObj = {
-    id: imageUrl,
+    id: itemHash !== undefined ? itemHash.id : thisItemId,
+    imageUrl: imageUrl,
+    dataURL: dataURL,
     name: drawingName,
   };
 
   const getImageSettings = (value) => {
-    const singleImageDetails = value?.filter(value => value.id === imageUrl);
+    // console.log(itemHash);
+    if(itemHash !== undefined){
+      console.log("ID: ",itemHash.id);
+      const singleImageDetails = value?.filter(value => value.id === itemHash?.id);
     if(singleImageDetails != undefined && isPageFocused !== true){
       // console.log('Image:',singleImageDetails);
       setDrawingName(singleImageDetails[0].name);
+      setDataURL(singleImageDetails[0].dataURL);
       setIsPageFocused(true);
     }
+  }
   }
 
 
@@ -135,15 +195,16 @@ export default function Painting({ navigation, route }) {
   const handleOK = async (signature) => {
     // console.log(signature);
     try {
-      await FileSystem.writeAsStringAsync(
-        filesystemURI,
-        signature.replace("data:image/png;base64,", ""),
-        { encoding: FileSystem.EncodingType.Base64 },
-      );
+      // await FileSystem.writeAsStringAsync(
+      //   filesystemURI,
+      //   signature.replace("data:image/png;base64,", ""),
+      //   { encoding: FileSystem.EncodingType.Base64 },
+      // );
       
       
       // const drawing = await FileSystem.getInfoAsync(filesystemURI);
       // console.log('Name',drawing);
+      imageObj.dataURL = signature;
       saved.current = true;
 
       if(!!drawingArray){
@@ -163,6 +224,7 @@ export default function Painting({ navigation, route }) {
         const jsonData = JSON.stringify([imageObj]);
         await AsyncStorage.setItem('@drawings',jsonData);
       }
+      // console.log(imageObj.dataURL);
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -176,49 +238,49 @@ export default function Painting({ navigation, route }) {
     else ref.current.erase();
   }, [isDrawing]);
 
-  useEffect(() => {
-    ref.current.changePenColor(
-      penColorHSL
-    );
-    console.log(penColorHSL);
-  }, [hue, saturation, lightness]);
+  // useEffect(() => {
+  //   ref.current.changePenColor(
+  //     penColorHSL
+  //   );
+  //   // console.log(penColorHSL);
+  // }, [hue, saturation, lightness]);
 
-  useEffect(() => {
-    ref.current.changePenSize(thickness, thickness);
-  }, [thickness]);
+  // useEffect(() => {
+  //   ref.current.changePenSize(brushSettings.thickness, brushSettings.thickness);
+  // }, [thickness]);
 
-  useEffect(() => {
-    const arr = [];
-    for (let i = nColors; i > 0; i--)
-      arr.push(`hsl(${i * (360 / nColors)}, ${saturation}%, ${lightness}%)`);
-    setColorArr(arr);
-  }, [lightness]);
+  // useEffect(() => {
+  //   const arr = [];
+  //   for (let i = nColors; i > 0; i--)
+  //     arr.push(`hsl(${i * (360 / nColors)}, ${brushSettings.saturation}%, ${brushSettings.lightness}%)`);
+  //   setColorArr(arr);
+  // }, [brushSettings.lightness]);
 
-  useEffect(() => {
-    if (!filesystemURI) return;
+  // useEffect(() => {
+  //   if (!filesystemURI) return;
 
-    FileSystem.getInfoAsync(filesystemURI).then(async ({ exists }) => {
-      if (exists) {
-        const base64 = await FileSystem.readAsStringAsync(filesystemURI, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        setDataURL(`data:image/png;base64,${base64}`);
-      }
-    });
-  }, [filesystemURI]);
+  //   FileSystem.getInfoAsync(filesystemURI).then(async ({ exists }) => {
+  //     if (exists) {
+  //       const base64 = await FileSystem.readAsStringAsync(filesystemURI, {
+  //         encoding: FileSystem.EncodingType.Base64,
+  //       });
+  //       setDataURL(`data:image/png;base64,${base64}`);
+  //     }
+  //   });
+  // }, [filesystemURI]);
 
-  useEffect(() => {
-    const hash = checkForHash();
-    if (hash)
-      return setFilesystemURI(`${FileSystem.documentDirectory}sigs/${hash}`);
-    Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      route.params.imageUrl
-    )
-      .then((hash) => `${FileSystem.documentDirectory}sigs/${hash}`)
-      .then(setFilesystemURI)
-      .catch(console.error);
-  }, []);
+  // useEffect(() => {
+  //   const hash = checkForHash();
+  //   if (hash)
+  //     return setFilesystemURI(`${FileSystem.documentDirectory}sigs/${hash}`);
+  //   Crypto.digestStringAsync(
+  //     Crypto.CryptoDigestAlgorithm.SHA256,
+  //     route.params.imageUrl
+  //   )
+  //     .then((hash) => `${FileSystem.documentDirectory}sigs/${hash}`)
+  //     .then(setFilesystemURI)
+  //     .catch(console.error);
+  // }, []);
 
   const style = `.m-signature-pad {box-shadow: none; border: none; } 
                  .m-signature-pad--body {border: none;}
@@ -250,29 +312,34 @@ export default function Painting({ navigation, route }) {
 
   
 
-  useEffect(() => {
-    const color = HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-    var hex = color.replace('#','');
+  // useEffect(() => {
+  //   const color = HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+  //   var hex = color.replace('#','');
 
-    if (hex.length === 3) {
-        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-    }
+  //   if (hex.length === 3) {
+  //       hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  //   }
 
-    var r = parseInt(hex.substring(0,2), 16),
-        g = parseInt(hex.substring(2,4), 16),
-        b = parseInt(hex.substring(4,6), 16);
+  //   var r = parseInt(hex.substring(0,2), 16),
+  //       g = parseInt(hex.substring(2,4), 16),
+  //       b = parseInt(hex.substring(4,6), 16);
 
-        setPenColorHSL('rgba('+r+', '+g+', '+b+', '+roundOpt+')');
-        ref.current.changePenColor(
-          'rgba('+r+', '+g+', '+b+', '+roundOpt+')'
-        );
-  }, [opacityOpt, hue, saturation, lightness]);
+  //       setPenColorHSL('rgba('+r+', '+g+', '+b+', '+roundOpt+')');
+  //       ref.current.changePenColor(
+  //         'rgba('+r+', '+g+', '+b+', '+brushSettings.opacity+')'
+  //       );
+  //       // console.log("Scale",lastScale);
+  // }, [brushSettings.opacity]);
 
   const [moveZoom, setMoveZoom] = useState(false);
 
   const panRef = React.createRef();
   const pinchRef = React.createRef();
   const rotationRef = React.createRef();
+
+  const [lastX, setLastX] = useState(0);
+  const [lastY, setLastY] = useState(0);
+  const [lastS, setLastS] = useState(1);
 
   const baseScale = new Animated.Value(1);
   const pinchScale = new Animated.Value(1);
@@ -282,6 +349,14 @@ export default function Painting({ navigation, route }) {
   
   const translateX = new Animated.Value(0);
   const translateY = new Animated.Value(0);
+
+  // console.log('Animation: ',lastS," ",lastX," ",lastY);
+
+  function setLState(state, props) {
+    console.log(state);
+    return null;
+  }
+
   const onGestureEvent = Animated.event([{
     nativeEvent: {scale: pinchScale}
   }],
@@ -293,8 +368,11 @@ export default function Painting({ navigation, route }) {
       lastScale *= event.nativeEvent.scale;
       baseScale.setValue(lastScale);
       pinchScale.setValue(1);
+      // console.log(lastScale);
+      // setLastS(lastScale);
     }
   };
+
 
   const handlePan = Animated.event([{
     nativeEvent: {
@@ -322,8 +400,10 @@ export default function Painting({ navigation, route }) {
       lastPan.y += event.nativeEvent.translationY;
       translateX.setOffset(lastPan.x);
       translateX.setValue(0);
-      translateY.setOffset(lastPan.y)
+      translateY.setOffset(lastPan.y);
       translateY.setValue(0);
+      // setLastX(lastPan.x);
+      // setLastY(lastPan.y);
       // ref.current.erase();
     }
   };
@@ -398,6 +478,7 @@ export default function Painting({ navigation, route }) {
       </>
     );
   };
+  
 
   return (
     <>
@@ -475,7 +556,7 @@ export default function Painting({ navigation, route }) {
             borderRadius: 15,
             backgroundColor: "#4d4d4d",
             width: wp(90),
-            height: hp(62),
+            height: hp(65),
             alignItems: "center",
             shadowColor: "#000",
             shadowOffset: {
@@ -486,7 +567,7 @@ export default function Painting({ navigation, route }) {
             shadowRadius: 3.84,
             elevation: 5,
           }}
-        >
+          >
           <HStack alignItems="center" w={wp(80)} justifyContent="space-between">
             <Box w={7} />
             <Text
@@ -540,6 +621,39 @@ export default function Painting({ navigation, route }) {
               )}
             />
           </View>
+          <Box 
+            flex={1}
+            flexDirection="column"
+            w={wp(80)}
+          >
+            <Box 
+              w={wp(80)}
+              flexDirection="row"
+              alignItems="center"
+              >
+              <Text color="#fff" fontSize="sm">Opacity: </Text>
+              <Box w={wp(50)} flexDirection="row" justifyContent="space-between">
+                <OpacityBtn value={10} />
+                <OpacityBtn value={50} />
+                <OpacityBtn value={100} />
+              </Box>
+            </Box>
+            <Box
+              w={wp(80)}
+              flexDirection="row"
+              alignItems="center"
+              marginTop={2}
+              >
+              <Text color="#fff" fontSize="sm">
+                Size: 
+              </Text>
+              <Box w={wp(50)} marginLeft={10} flexDirection="row" justifyContent="space-between">
+                <SizeBtn value={10} />
+                <SizeBtn value={50} />
+                <SizeBtn value={100} />
+              </Box>
+            </Box>
+          </Box>
           {/* <Box
             flex={1}
             flexDirection="row"
@@ -653,7 +767,7 @@ export default function Painting({ navigation, route }) {
         </Svg>
       </Modal>
 
-      <Modal
+      {/* <Modal
         isOpen={erasingModal}
         overlayVisible={false}
         onClose={() => setErasingModal(false)}
@@ -713,7 +827,7 @@ export default function Painting({ navigation, route }) {
                 value={thickness}
                 step={0.1}
                 tapToSeek
-                onSlidingComplete={setThickness}
+                onSlidingComplete={(e) => dispatch({type: "SET_THICKNESS", payload: e})}
                 thumbTintColor="#FFF"
               />
             </Box>
@@ -738,7 +852,7 @@ export default function Painting({ navigation, route }) {
             </TouchableOpacity>
           </Box>
         </View>
-      </Modal>
+      </Modal> */}
 
       <Modal 
        isOpen={saveModal}
@@ -835,12 +949,11 @@ export default function Painting({ navigation, route }) {
                             webStyle={webStyles}
                             onBegin={() => setEditing(true)}
                             onOK={handleOK}
-                            trimWhitespace={false}
-                            minWidth={thickness}
-                            maxWidth={thickness}
+                            minWidth={5}
+                            maxWidth={5}
                             onEmpty={handleEmpty}
                             onGetData={handleData}
-                            penColor={penColorHSL}
+                            style={{ zIndex: 1 }}
                           />
                       </Animated.View>
                     </RotationGestureHandler>
@@ -851,105 +964,9 @@ export default function Painting({ navigation, route }) {
             {/* Gesture work end here by Abdulmutalib */}
         </Box>
         <VStack alignItems="center" justifyContent="space-evenly" flex={1}>
-          <HStack
-            width={wp(90)}
-            alignItems="center"
-            justifyContent="space-between"
-            >
-            <AwesomeButton
-              onPress={() => {
-                isDrawing ? setIsDrawing(false) : setErasingModal(true);
-              }}
-              width={buttonSize}
-              height={buttonSize}
-              borderRadius={2000}
-              backgroundColor={!isDrawing ? "#72C4BE" : colors.darkGrey}
-              backgroundDarker={colors.grey}
-              raiseLevel={2}
-            >
-              <Icon
-                as={<FontAwesome5 name="eraser" />}
-                size="sm"
-                color="white"
-              />
-            </AwesomeButton>
-            <Slider
-              width={wp(60)}
-              height={buttonSize / 1.5}
-              minValue={60}
-              maxValue={90}
-              initVal={75}
-              positionVal={Math.round(((90 - lightness) / 30) * 100) }
-              onValueChangeEnd={(value) => setLightness(90 - value + 60)}
-              colorArr={[
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
-              ]}
-            />
-            <AwesomeButton
-              onPress={() => {
-                !isDrawing ? setIsDrawing(true) : setDrawingModal(true);
-              }}
-              width={buttonSize}
-              height={buttonSize}
-              borderRadius={2000}
-              backgroundColor={isDrawing ? "#72C4BE" : colors.darkGrey}
-              backgroundDarker={colors.grey}
-              raiseLevel={2}
-            >
-              <Icon as={<Entypo name="brush" />} size="sm" color="white" />
-            </AwesomeButton>
-          </HStack>
+          <SignaturePage refs={ref} />
 
-          {/* Opacity settings */}
-          <HStack
-            width={wp(90)}
-            alignItems="center"
-            justifyContent="space-between"
-            >
-            
-            <Text>Opacity</Text>
-            
-            <Slider
-              width={wp(60)}
-              height={buttonSize / 1.5}
-              minValue={0}
-              maxValue={100}
-              initVal={opacityOpt*100}
-              positionVal={opacityOpt*100}
-              onValueChangeEnd={(value) => setOpacityOpt(value/100)}
-              colorArr={[
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
-              ]}
-            />
-          </HStack>
-
-          {/* Opacity own */}
-
-          <HStack
-            width={wp(90)}
-            alignItems="center"
-            justifyContent="space-between"
-            >
-              <Text>Brush Size</Text>
-            <Slider
-              width={wp(60)}
-              height={buttonSize / 1.5}
-              minValue={minBrushSize}
-              maxValue={maxBrushSize}
-              initVal={thickness}
-              positionVal={Math.round((thickness / 27) * 100) }
-              onValueChangeEnd={(value) => setThickness(value)}
-              colorArr={[
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
-              ]}
-            />
-            <View />
-          </HStack>
-
-          <FlatList
+          {/* <FlatList
             horizontal
             data={colorArr}
             showsHorizontalScrollIndicator={false}
@@ -962,7 +979,9 @@ export default function Painting({ navigation, route }) {
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => {
-                  setHue(item.substr(4, 3).split(",")[0]);
+                  // setHue(item.substr(4, 3).split(",")[0]);
+                  const hueData = item.substr(4, 3).split(",")[0];
+                  dispatch({type: 'SET_HUE', payload: hueData});
                 }}
                 style={{
                   marginHorizontal: wp(1),
@@ -973,7 +992,7 @@ export default function Painting({ navigation, route }) {
                 }}
               />
             )}
-          />
+          /> */}
           <HStack
             width={wp(90)}
             style={{ height: 40 }}

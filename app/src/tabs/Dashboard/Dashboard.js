@@ -36,14 +36,15 @@ function Dashboard({ navigation }) {
   const imagesState = useSelector((state) => state.images);
   const drawingsState = useSelector((state) => state.drawings);
 
-  const [drawingsDetails, setDrawingsDetails] = useState(null);
+  const [drawingsDetails, setDrawingsDetails] = useState([]);
 
   const loadLocaStorage = async () => {
     const storeDrawings = await AsyncStorage.getItem('@drawings');
-    const drawingsParse = storeDrawings != null ? JSON.parse(storeDrawings) : null;
+    const drawingsParse = storeDrawings != [] ? JSON.parse(storeDrawings) : [];
     setDrawingsDetails(drawingsParse);
-    // console.log("focus");
+    // console.log("focus:", drawingsParse[3].dataURL);
   };
+  // console.log("Test:",drawingsDetails?.length);
 
   useEffect(() => {
     return navigation.addListener("blur", () => setImageHashes([]));
@@ -157,7 +158,7 @@ function Dashboard({ navigation }) {
       </View>
       <FlatList
         horizontal
-        data={imageHashes}
+        data={drawingsDetails}
         contentContainerStyle={{
           paddingHorizontal: wp(5),
         }}
@@ -166,11 +167,11 @@ function Dashboard({ navigation }) {
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={1}
-        keyExtractor={(item, index) => `${index}-${item}`}
+        keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => {
-              RootNavigation.navigate("Painting", { imageUrl: item.url, itemHash: item });
+              RootNavigation.navigate("Painting", { imageUrl: item.imageUrl, itemHash: item });
             }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
           >
@@ -181,9 +182,7 @@ function Dashboard({ navigation }) {
                 marginHorizontal: 5,
               }}
               source={{
-                uri: `${FileSystem.documentDirectory}sigs/${
-                  item.hash
-                }?_=${Date.now()}`,
+                uri: item.imageUrl,
               }}
             >
               <CachedImage
@@ -193,12 +192,13 @@ function Dashboard({ navigation }) {
                   borderWidth: 2,
                   borderColor: "black",
                 }}
-                source={{ uri: item.url }}
+                source={{ uri: `${item.dataURL}` }}
                 compressed
               />
             </ImageBackground>
             <Text>{
-              drawingsDetails !== null ? drawingsDetails?.map((value) => showName(value, item.url)) : ''
+              // drawingsDetails !== null ? drawingsDetails?.map((value) => showName(value, item.id)) : ''
+              item.name
               }</Text>
           </TouchableOpacity>
         )}
@@ -274,7 +274,7 @@ function Dashboard({ navigation }) {
     <Box safeArea={newPortraits ? 0 : true}>
       <ScrollView>
         {newPortraits && <NewPortraitsAvailability />}
-        {imageHashes.length > 0 && <CurrentProjectList />}
+        {drawingsDetails?.length > 0 && <CurrentProjectList />}
         <Catalogue />
       </ScrollView>
     </Box>
