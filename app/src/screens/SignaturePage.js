@@ -23,7 +23,6 @@ export default function SignaturePage({ refs }) {
     const dispatch = useDispatch();
 
     //Variables
-    const [penColorHSL, setPenColorHSL] = useState('');
 
     const roundOpt = Math.round (brushOptions.opacity * 10) / 10;
     const isDrawing = brushOptions.isDrawing;
@@ -37,6 +36,8 @@ export default function SignaturePage({ refs }) {
     const minBrushSize = 2.5;
     const maxBrushSize = 27;
     const nColors = 12;
+
+    const [penColorHSL, setPenColorHSL] = useState('rgba(243, 140, 140, 1)');
 
     //Functions
     const setIsDrawing = (value) => {
@@ -86,7 +87,7 @@ export default function SignaturePage({ refs }) {
             refs.current.changePenColor(
               'rgba('+r+', '+g+', '+b+', '+roundOpt+')'
             );
-            // console.log("Scale",lastScale);
+            // console.log("Scale", 'rgba('+r+', '+g+', '+b+', '+roundOpt+')');
       }, [opacity, hue, saturation, lightness]);
 
       useEffect(() => {
