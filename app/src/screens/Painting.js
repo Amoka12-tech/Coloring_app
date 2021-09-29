@@ -39,6 +39,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { v4 as uuidv4 } from 'uuid';
 import { useDispatch, useSelector } from "react-redux";
 import SignaturePage from "./SignaturePage";
+import BrushModal from "./BrushModal";
+import EraseModal from "./EraseModal";
+import { store } from '../redux/store';
 
 export default function Painting({ navigation, route }) {
   // const brushSettings = useSelector(state => state.imageSettings);
@@ -48,7 +51,7 @@ export default function Painting({ navigation, route }) {
   // const hue = brushSettings?.hue;
   // const saturation = brushSettings?.saturation;
   // const lightness = brushSettings?.lightness;
-  const [isDrawing, setIsDrawing] = useState(true);
+  // const [isDrawing, setIsDrawing] = useState(true);
   const [isZooming, setIsZooming] = useState(false);
   const [drawingModal, setDrawingModal] = useState(false);
   const [erasingModal, setErasingModal] = useState(false);
@@ -94,48 +97,6 @@ export default function Painting({ navigation, route }) {
     setJsonDrawings(drawingsParse);
     getImageSettings(drawingsParse);
     console.log("focus");
-  };
-
-  const OpacityBtn = (props) => {
-    return(
-      <TouchableOpacity 
-        onPress={() => props.setState(props.value/100)}
-        style={{ 
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          flexDirection: 'column',
-          justifyContent: 'center',
-          backgroundColor: "#fff",
-          alignItems: 'center',
-          marginLeft: 10,
-          elevation: 2,
-         }}
-        >
-        <Text fontSize={10} >{`${props.value}%`}</Text>
-      </TouchableOpacity>
-    )
-  };
-
-  const SizeBtn = (props) => {
-    return(
-      <TouchableOpacity 
-        onPress={() => props.setState((props.value * 27)/100)}
-        style={{ 
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          flexDirection: 'column',
-          justifyContent: 'center',
-          backgroundColor: "#fff",
-          alignItems: 'center',
-          marginLeft: 10,
-          elevation: 2,
-         }}
-        >
-        <Text fontSize={10} >{`${props.value}%`}</Text>
-      </TouchableOpacity>
-    )
   };
   
 
@@ -233,54 +194,10 @@ export default function Painting({ navigation, route }) {
 
   const gestureState = State.ACTIVE;
 
-  useEffect(() => {
-    if (isDrawing) ref.current.draw();
-    else ref.current.erase();
-  }, [isDrawing]);
-
   // useEffect(() => {
-  //   ref.current.changePenColor(
-  //     penColorHSL
-  //   );
-  //   // console.log(penColorHSL);
-  // }, [hue, saturation, lightness]);
-
-  // useEffect(() => {
-  //   ref.current.changePenSize(brushSettings.thickness, brushSettings.thickness);
-  // }, [thickness]);
-
-  // useEffect(() => {
-  //   const arr = [];
-  //   for (let i = nColors; i > 0; i--)
-  //     arr.push(`hsl(${i * (360 / nColors)}, ${brushSettings.saturation}%, ${brushSettings.lightness}%)`);
-  //   setColorArr(arr);
-  // }, [brushSettings.lightness]);
-
-  // useEffect(() => {
-  //   if (!filesystemURI) return;
-
-  //   FileSystem.getInfoAsync(filesystemURI).then(async ({ exists }) => {
-  //     if (exists) {
-  //       const base64 = await FileSystem.readAsStringAsync(filesystemURI, {
-  //         encoding: FileSystem.EncodingType.Base64,
-  //       });
-  //       setDataURL(`data:image/png;base64,${base64}`);
-  //     }
-  //   });
-  // }, [filesystemURI]);
-
-  // useEffect(() => {
-  //   const hash = checkForHash();
-  //   if (hash)
-  //     return setFilesystemURI(`${FileSystem.documentDirectory}sigs/${hash}`);
-  //   Crypto.digestStringAsync(
-  //     Crypto.CryptoDigestAlgorithm.SHA256,
-  //     route.params.imageUrl
-  //   )
-  //     .then((hash) => `${FileSystem.documentDirectory}sigs/${hash}`)
-  //     .then(setFilesystemURI)
-  //     .catch(console.error);
-  // }, []);
+  //   if (isDrawing) ref.current.draw();
+  //   else ref.current.erase();
+  // }, [isDrawing]);
 
   const style = `.m-signature-pad {box-shadow: none; border: none; } 
                  .m-signature-pad--body {border: none;}
@@ -312,34 +229,12 @@ export default function Painting({ navigation, route }) {
 
   
 
-  // useEffect(() => {
-  //   const color = HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-  //   var hex = color.replace('#','');
-
-  //   if (hex.length === 3) {
-  //       hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-  //   }
-
-  //   var r = parseInt(hex.substring(0,2), 16),
-  //       g = parseInt(hex.substring(2,4), 16),
-  //       b = parseInt(hex.substring(4,6), 16);
-
-  //       setPenColorHSL('rgba('+r+', '+g+', '+b+', '+roundOpt+')');
-  //       ref.current.changePenColor(
-  //         'rgba('+r+', '+g+', '+b+', '+brushSettings.opacity+')'
-  //       );
-  //       // console.log("Scale",lastScale);
-  // }, [brushSettings.opacity]);
-
   const [moveZoom, setMoveZoom] = useState(false);
 
   const panRef = React.createRef();
   const pinchRef = React.createRef();
   const rotationRef = React.createRef();
 
-  const [lastX, setLastX] = useState(0);
-  const [lastY, setLastY] = useState(0);
-  const [lastS, setLastS] = useState(1);
 
   const baseScale = new Animated.Value(1);
   const pinchScale = new Animated.Value(1);
@@ -352,10 +247,6 @@ export default function Painting({ navigation, route }) {
 
   // console.log('Animation: ',lastS," ",lastX," ",lastY);
 
-  function setLState(state, props) {
-    console.log(state);
-    return null;
-  }
 
   const onGestureEvent = Animated.event([{
     nativeEvent: {scale: pinchScale}
@@ -392,6 +283,7 @@ export default function Painting({ navigation, route }) {
     if(numberOfPointers > 1){
       ref.current.erase();
     }else{
+      const isDrawing = store.getState().imageSettings.isDrawing;
       if(isDrawing) ref.current.draw();
       else ref.current.erase();
     }
@@ -545,314 +437,11 @@ export default function Painting({ navigation, route }) {
         </View>
       </Modal>
 
-      <Modal
-        isOpen={drawingModal}
-        overlayVisible={false}
-        onClose={() => setDrawingModal(false)}
-        style={{ justifyContent: "flex-start", marginTop: hp(6) }}
-      >
-        <View
-          style={{
-            borderRadius: 15,
-            backgroundColor: "#4d4d4d",
-            width: wp(90),
-            height: hp(65),
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-          }}
-          >
-          <HStack alignItems="center" w={wp(80)} justifyContent="space-between">
-            <Box w={7} />
-            <Text
-              fontSize="xl"
-              fontWeight={600}
-              color="#fff"
-              style={{ marginVertical: hp(2) }}
-            >
-              Brushes
-            </Text>
-            <TouchableOpacity
-              style={{ marginVertical: hp(2) }}
-              onPress={() => setDrawingModal(false)}
-            >
-              <Icon color="white" as={<AntDesign name="check" />} size="sm" />
-            </TouchableOpacity>
-          </HStack>
-          <View style={{ height: hp(45) }}>
-            <FlatList
-              data={brushes}
-              showsVerticalScrollIndicator={false}
-              keyExtractor={(item, index) => `${item}-${index}`}
-              ItemSeparatorComponent={() => (
-                <View
-                  style={{ width: wp(90), height: 1, backgroundColor: "#eee" }}
-                />
-              )}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => setDrawingModal(false)}
-                  style={{
-                    width: wp(90),
-                    height: hp(8),
-                    backgroundColor: "#fff",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: wp(70),
-                    }}
-                  >
-                    <Text>{item.name}</Text>
-                    {item.svg}
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-          <Box 
-            flex={1}
-            flexDirection="column"
-            w={wp(80)}
-          >
-            <Box 
-              w={wp(80)}
-              flexDirection="row"
-              alignItems="center"
-              >
-              <Text color="#fff" fontSize="sm">Opacity: </Text>
-              <Box w={wp(50)} flexDirection="row" justifyContent="space-between">
-                <OpacityBtn value={10} />
-                <OpacityBtn value={50} />
-                <OpacityBtn value={100} />
-              </Box>
-            </Box>
-            <Box
-              w={wp(80)}
-              flexDirection="row"
-              alignItems="center"
-              marginTop={2}
-              >
-              <Text color="#fff" fontSize="sm">
-                Size: 
-              </Text>
-              <Box w={wp(50)} marginLeft={10} flexDirection="row" justifyContent="space-between">
-                <SizeBtn value={10} />
-                <SizeBtn value={50} />
-                <SizeBtn value={100} />
-              </Box>
-            </Box>
-          </Box>
-          {/* <Box
-            flex={1}
-            flexDirection="row"
-            justifyContent="space-between"
-            alignItems="center"
-            w={wp(80)}
-            >
-            <Text fontSize="sm" color="#fff" ml={2}>
-              Size
-            </Text>
+      {/* Drawing Modal */}
+      <BrushModal refs={ref} />
 
-            <Text style={{ marginLeft: 10 }} fontSize="sm" color="#fff" >
-              0%
-            </Text>
-            <Box w={wp(50)}>
-              <RNSlider
-                minimumValue={minBrushSize}
-                maximumValue={maxBrushSize}
-                minimumTrackTintColor="#FFF"
-                maximumTrackTintColor="#000"
-                value={thickness}
-                step={0.1}
-                tapToSeek
-                onSlidingComplete={setThickness}
-                thumbTintColor="#FFF"
-              />
-            </Box>
-            
-            <Text fontSize="sm" color="#fff" >
-              100%
-            </Text>
-            
-            <View
-              style={{
-                width: maxBrushSize,
-                height: maxBrushSize,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  width: thickness + 8,
-                  height: thickness + 8,
-                  borderRadius: (thickness + 8) / 2,
-                  borderColor: "#fff",
-                  borderWidth: 1,
-                }}
-              />
-            </View>
-          </Box> */}
-          {/* <Box
-            flex={1}
-            flexDirection="row"
-            justifyContent="space-between"
-            alignItems="center"
-            w={wp(80)}
-            >
-            <Text fontSize="sm" color="#fff" ml={2}>
-              Opacity
-            </Text>
-            <Text style={{ marginLeft: 10 }} fontSize="sm" color="#fff" >
-              0%
-            </Text>
-            <Box w={wp(40)}>
-              <RNSlider
-                minimumValue={0}
-                maximumValue={100}
-                minimumTrackTintColor="#FFF"
-                maximumTrackTintColor="#000"
-                value={opacityOpt*100}
-                step={0.1}
-                tapToSeek
-                onSlidingComplete={(value) => setOpacityOpt(value/100)}
-                thumbTintColor="#FFF"
-              />
-            </Box>
-
-            <Text fontSize="sm" color="#fff">
-              100%
-            </Text>
-
-            
-            <View
-              style={{
-                width: maxBrushSize,
-                height: maxBrushSize,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  width: thickness + 8,
-                  height: thickness + 8,
-                  borderRadius: (thickness + 8) / 2,
-                  borderColor: "#fff",
-                  borderWidth: 1,
-                }}
-              />
-            </View>
-          </Box> */}
-        </View>
-        <Svg
-          style={{ alignSelf: "flex-end", end: wp(11) - 14.5, top: -10 }}
-          width={29}
-          height={25}
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <Path d="M29 0L14.5 25 0 0h29z" fill="#4d4d4d" />
-        </Svg>
-      </Modal>
-
-      {/* <Modal
-        isOpen={erasingModal}
-        overlayVisible={false}
-        onClose={() => setErasingModal(false)}
-        style={{ justifyContent: "center" }}
-      >
-        <View
-          style={{
-            borderRadius: 15,
-            backgroundColor: "#4d4d4d",
-            width: wp(90),
-            height: hp(15),
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-          }}
-        >
-          <HStack justifyContent="space-between" w={wp(80)}>
-            <Box w={7} />
-            <Text
-              fontSize="xl"
-              fontWeight={600}
-              color="#fff"
-              style={{ marginVertical: hp(2) }}
-            >
-              Eraser
-            </Text>
-            <TouchableOpacity
-              style={{ marginVertical: hp(2) }}
-              onPress={() => setErasingModal(false)}
-            >
-              <Icon color="white" as={<AntDesign name="check" />} size="sm" />
-            </TouchableOpacity>
-          </HStack>
-
-          <Box
-            flex={1}
-            flexDirection="row"
-            justifyContent="space-between"
-            alignItems="center"
-            w={wp(80)}
-          >
-            <Text fontSize="xl" color="#fff" ml={2}>
-              Eraser size
-            </Text>
-            <Box w={wp(50)}>
-              <RNSlider
-                minimumValue={minBrushSize}
-                maximumValue={maxBrushSize}
-                minimumTrackTintColor="#FFF"
-                maximumTrackTintColor="#000"
-                value={thickness}
-                step={0.1}
-                tapToSeek
-                onSlidingComplete={(e) => dispatch({type: "SET_THICKNESS", payload: e})}
-                thumbTintColor="#FFF"
-              />
-            </Box>
-            <TouchableOpacity
-              onPress={() => setDrawingModal(false)}
-              style={{
-                width: maxBrushSize,
-                height: maxBrushSize,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  width: thickness + 8,
-                  height: thickness + 8,
-                  borderRadius: (thickness + 8) / 2,
-                  borderColor: "#fff",
-                  borderWidth: 1,
-                }}
-              />
-            </TouchableOpacity>
-          </Box>
-        </View>
-      </Modal> */}
+      {/* Erase Modal */}
+      <EraseModal refs={ref} />
 
       <Modal 
        isOpen={saveModal}

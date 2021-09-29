@@ -89,6 +89,11 @@ export default function SignaturePage({ refs }) {
             // console.log("Scale",lastScale);
       }, [opacity, hue, saturation, lightness]);
 
+      useEffect(() => {
+        if (isDrawing) refs.current.draw();
+        else refs.current.erase();
+      }, [isDrawing]);
+
   return (
     <>
         <HStack
