@@ -37,67 +37,9 @@ export default function BrushModal({ refs }) {
     //Modal Variable
     const drawingModal = brushOptions.drawingModal;
 
-
-    const setIsDrawing = (value) => {
-        dispatch({type: "SET_DRAWING", payload: value});
-    };
-
     const setDrawingModal = (value) => {
         dispatch({type: "SET_DRAWING_MODAL", payload: value});
     };
-
-    const setErasingModal = (value) => {
-        dispatch({type: "SET_ERASING_MODAL", payload: value});
-    };
-
-
-    const OpacityBtn = (props) => {
-        return(
-          <TouchableOpacity 
-            onPress={() => {
-                const opacityData = props.value/100;
-                dispatch({type: 'SET_OPACITY', payload: opacityData});
-            }}
-            style={{ 
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              flexDirection: 'column',
-              justifyContent: 'center',
-              backgroundColor: "#fff",
-              alignItems: 'center',
-              marginLeft: 10,
-              elevation: 2,
-             }}
-            >
-            <Text fontSize={10} >{`${props.value}%`}</Text>
-          </TouchableOpacity>
-        )
-      };
-    
-      const SizeBtn = (props) => {
-        return(
-          <TouchableOpacity 
-            onPress={() => {
-                const thicknessData = (props.value * 27)/100;
-                dispatch({type: "SET_THICKNESS", payload: thicknessData});
-            }}
-            style={{ 
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              flexDirection: 'column',
-              justifyContent: 'center',
-              backgroundColor: "#fff",
-              alignItems: 'center',
-              marginLeft: 10,
-              elevation: 2,
-             }}
-            >
-            <Text fontSize={10} >{`${props.value}%`}</Text>
-          </TouchableOpacity>
-        )
-      };
 
   return (
     <>
@@ -153,7 +95,16 @@ export default function BrushModal({ refs }) {
               )}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => setDrawingModal(false)}
+                  onPress={() => {
+                    const lightnessData = 79.4;
+                    const opacityData = 67/100;
+                    const thicknessData = (34 * 27)/100;
+
+                    dispatch({type: 'SET_OPACITY', payload: opacityData});
+                    dispatch({type: "SET_THICKNESS", payload: thicknessData});
+                    dispatch({type: "SET_LIGHTNESS", payload: lightnessData});
+                    setDrawingModal(false);
+                  }}
                   style={{
                     width: wp(90),
                     height: hp(8),
@@ -177,7 +128,7 @@ export default function BrushModal({ refs }) {
               )}
             />
           </View>
-          <Box 
+          {/* <Box 
             flex={1}
             flexDirection="column"
             w={wp(80)}
@@ -209,7 +160,7 @@ export default function BrushModal({ refs }) {
                 <SizeBtn value={100} />
               </Box>
             </Box>
-          </Box>
+          </Box> */}
           {/* <Box
             flex={1}
             flexDirection="row"

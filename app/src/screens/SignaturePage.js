@@ -104,7 +104,7 @@ export default function SignaturePage({ refs }) {
             >
             <AwesomeButton
               onPress={() => {
-                isDrawing ? setIsDrawing(false) : setErasingModal(true);
+                setIsDrawing(false);
               }}
               width={buttonSize}
               height={buttonSize}
@@ -129,7 +129,6 @@ export default function SignaturePage({ refs }) {
               onValueChangeEnd={(value) => {
                 const lightnessData = 90 - value + 60;
                 dispatch({type: "SET_LIGHTNESS", payload: lightnessData});
-                // setLightness(90 - value + 60);
               }}
               colorArr={[
                 HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),

@@ -441,7 +441,7 @@ export default function Painting({ navigation, route }) {
       <BrushModal refs={ref} />
 
       {/* Erase Modal */}
-      <EraseModal refs={ref} />
+      {/* <EraseModal refs={ref} /> */}
 
       <Modal 
        isOpen={saveModal}
