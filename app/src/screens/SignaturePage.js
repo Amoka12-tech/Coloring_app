@@ -65,14 +65,14 @@ export default function SignaturePage({ refs }) {
 
     //Use Effects
     useEffect(() => {
-        const arr = [];
+        const arr = [`hsl(0, ${80 - saturation}%, ${lightness - 60}%)`,`hsl(30, ${saturation}%, ${lightness}%)`];
         for (let i = nColors; i > 0; i--)
           arr.push(`hsl(${i * (360 / nColors)}, ${saturation}%, ${lightness}%)`);
         setColorArr(arr);
       }, [lightness]);
 
       useEffect(() => {
-        const color = HSLToRGB(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+        const color = HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, ${hue == 0? lightness - 60 : lightness}%)`);
         var hex = color.replace('#','');
     
         if (hex.length === 3) {
@@ -82,11 +82,13 @@ export default function SignaturePage({ refs }) {
         var r = parseInt(hex.substring(0,2), 16),
             g = parseInt(hex.substring(2,4), 16),
             b = parseInt(hex.substring(4,6), 16);
-    
+
             setPenColorHSL('rgba('+r+', '+g+', '+b+', '+roundOpt+')');
-            refs.current.changePenColor(
-              'rgba('+r+', '+g+', '+b+', '+roundOpt+')'
-            );
+              refs.current.changePenColor(
+                'rgba('+r+', '+g+', '+b+', '+roundOpt+')'
+              );
+    
+            
             // console.log("Scale", 'rgba('+r+', '+g+', '+b+', '+roundOpt+')');
       }, [opacity, hue, saturation, lightness]);
 
@@ -131,8 +133,8 @@ export default function SignaturePage({ refs }) {
                 dispatch({type: "SET_LIGHTNESS", payload: lightnessData});
               }}
               colorArr={[
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
+                HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, 90%)`),
+                HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, 60%`),
               ]}
             />
             <AwesomeButton
@@ -172,8 +174,8 @@ export default function SignaturePage({ refs }) {
                 // setOpacityOpt(value/100);
               }}
               colorArr={[
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
+                HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, 90%)`),
+                HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, 60%`),
               ]}
             />
           </HStack>
@@ -198,8 +200,8 @@ export default function SignaturePage({ refs }) {
                 // setThickness(value);
               }}
               colorArr={[
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 90%)`),
-                HSLToRGB(`hsl(${hue}, ${saturation}%, 60%`),
+                HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, 90%)`),
+                HSLToRGB(`hsl(${hue}, ${hue == 0? 80 - saturation : saturation}%, 60%`),
               ]}
             />
             <View />
