@@ -323,9 +323,9 @@ export default function Painting({ navigation, route }) {
   const AppBar = () => {
     return (
       <>
-        <Box safeAreaTop />
+        <Box safeAreaTop zIndex={1000} />
 
-        <HStack px={5} justifyContent="space-between" alignItems="center">
+        <HStack zIndex={1000} px={5} justifyContent="space-between" alignItems="center">
           <TouchableOpacity onPress={() => {
             setIsPageFocused(false);
             navigation.goBack();
@@ -378,7 +378,7 @@ export default function Painting({ navigation, route }) {
 
       <AppBar />
 
-      <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', }}>
+      <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', zIndex: 1 }}>
         <Text style={{ fontSize: 16 }} >
           {drawingName}
         </Text>
