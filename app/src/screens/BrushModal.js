@@ -96,13 +96,9 @@ export default function BrushModal({ refs }) {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
-                    const lightnessData = 79.4;
-                    const opacityData = 67/100;
-                    const thicknessData = (34 * 27)/100;
-
-                    dispatch({type: 'SET_OPACITY', payload: opacityData});
-                    dispatch({type: "SET_THICKNESS", payload: thicknessData});
-                    dispatch({type: "SET_LIGHTNESS", payload: lightnessData});
+                    dispatch({type: 'SET_OPACITY', payload: item.opacityData});
+                    dispatch({type: "SET_THICKNESS", payload: item.thicknessData});
+                    dispatch({type: "SET_LIGHTNESS", payload: item.lightnessData});
                     setDrawingModal(false);
                   }}
                   style={{

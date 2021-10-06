@@ -35,34 +35,52 @@ export const brushes = [
         />
       </Svg>
     ),
+    lightnessData : 79.4,
+    opacityData : 67/100,
+    thicknessData : (34 * 27)/100,
   },
   {
     name: 'Pencil',
     svg: (
       <Image style={{ marginEnd: -10 }} source={require('./res/pencil.png')}/>
     ),
+    lightnessData : 79.4,
+    opacityData : 50/100,
+    thicknessData : (34 * 27)/100,
   },
   {
     name: 'Marker',
     svg: (
       <Image style={{ marginEnd: -20 }} source={require('./res/marker.png')}/>
     ),
+    lightnessData : 79.4,
+    opacityData : 67/100,
+    thicknessData : (34 * 27)/100,
   },
   {
     name: 'Airbrush',
     svg: <Image style={{ marginEnd: -20 }} source={require('./res/air.png')}/>,
+    lightnessData : 79.4,
+    opacityData : 67/100,
+    thicknessData : (34 * 27)/100,
   },
   {
     name: 'Paintbrush',
     svg: (
       <Image style={{ marginEnd: -20 }} source={require('./res/paint.png')}/>
     ),
+    lightnessData : 79.4,
+    opacityData : 67/100,
+    thicknessData : (34 * 27)/100,
   },
   {
     name: 'Watercolor',
     svg: (
       <Image style={{ marginEnd: -10 }} source={require('./res/water.png')}/>
     ),
+    lightnessData : 79.4,
+    opacityData : 67/100,
+    thicknessData : (34 * 27)/100,
   },
 ];
 
